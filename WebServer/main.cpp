@@ -1,26 +1,30 @@
 // server.cpp
-#include <iostream>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <string.h>
-#include <pthread.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
+#include <iostream>
+#include <thread>
 
 using namespace std;
 
-// Function to handle each client connection
-void* handle_client(void* arg) {
-    int client_sock = *(int*)arg;
-    delete (int*)arg; // Free the allocated memory
+int BUFFER_SIZE = 4096;
+const int SERVER_PORT = 5555;  // Server port
 
-    char buffer[4096];
+// Function to handle each client connection
+void* handle_client(int* client_sock_ptr) {
+    int client_sock = *client_sock_ptr;
+    delete client_sock_ptr;  // Free the allocated memory
+
+    char buffer[BUFFER_SIZE];
     int read_bytes;
 
     // Read data from client until the connection is closed
-    while ((read_bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0)) > 0) {
-        buffer[read_bytes] = '\0';  // Null-terminate the received string
+    while ((read_bytes = recv(client_sock, buffer, BUFFER_SIZE - 1, 0)) > 0) {
+        buffer[read_bytes] = '\0';                           // Null-terminate the received string
         cout << "Received from client: " << buffer << endl;  // Log the received message
 
         // Check the message content
@@ -34,7 +38,7 @@ void* handle_client(void* arg) {
         }
 
         // Send acknowledgment back to the client
-        const char *ack_message = "Message received\n";
+        const char* ack_message = "Message received\n";
         send(client_sock, ack_message, strlen(ack_message), 0);  // Send response
         cout << "Acknowledgment sent to client." << endl;
     }
@@ -47,12 +51,12 @@ void* handle_client(void* arg) {
 
     close(client_sock);  // Close the client socket
     cout << "Client connection closed." << endl;
-    pthread_exit(NULL);
+    // pthread_exit(NULL);
+    return 0;
 }
 
 int main() {
-    const int server_port = 5555; // Server port
-    int sock = socket(AF_INET, SOCK_STREAM, 0);  // Create a socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);  // Create a socket. AF_INET means IPv4 and SOCK_STREAM is TCP
     if (sock < 0) {
         perror("Error creating socket");
         return -1;
@@ -70,9 +74,9 @@ int main() {
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = INADDR_ANY;  // Accept connections from any address
-    sin.sin_port = htons(server_port);
+    sin.sin_port = htons(SERVER_PORT);
 
-    if (bind(sock, (struct sockaddr *) &sin, sizeof(sin)) < 0) {
+    if (bind(sock, (struct sockaddr*)&sin, sizeof(sin)) < 0) {
         perror("Error binding socket");
         close(sock);
         return -1;
@@ -84,26 +88,28 @@ int main() {
         return -1;
     }
 
-    cout << "Server is running and waiting for client connections on port " << server_port << "..." << endl;
+    cout << "Server is running and waiting for client connections on port " << SERVER_PORT << "..." << endl;
 
-    while (true) { // Loop to accept multiple connections
+    while (true) {  // Loop to accept multiple connections
         struct sockaddr_in client_sin;
         socklen_t addr_len = sizeof(client_sin);
 
         // Accept client connection
         int* client_sock = new int;
-        *client_sock = accept(sock, (struct sockaddr *) &client_sin, &addr_len);
-        if (*client_sock < 0) {
+        *client_sock = accept(sock, (struct sockaddr*)&client_sin, &addr_len);
+        if (*client_sock <= 0) {
             perror("Error accepting client connection");
             delete client_sock;
-            continue; // Continue to accept the next connection
+            continue;  // Continue to accept the next connection
         }
 
         cout << "Client connected!" << endl;  // Debug: Confirm client connection
 
         // Create a thread to handle the client
-        pthread_t client_thread;
-        if (pthread_create(&client_thread, NULL, handle_client, (void*)client_sock) != 0) {
+        thread client_thread;
+        try {
+            client_thread = thread(&handle_client, client_sock);
+        } catch (const std::system_error& e) {
             perror("Error creating thread");
             close(*client_sock);
             delete client_sock;
@@ -111,9 +117,9 @@ int main() {
         }
 
         // Detach the thread so that it cleans up after itself
-        pthread_detach(client_thread);
+        client_thread.detach();
     }
 
-    close(sock); // Close the server socket
+    close(sock);  // Close the server socket
     return 0;
 }

@@ -1,0 +1,22 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "makefiler",
+         "type": "shell",
+         "command": "make",
+         "args": [],
+         "options": {
+            "cwd": "${workspaceFolder}"
+         },
+         "problemMatcher": [
+            "$gcc"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "detail": "Compiles the project using the Makefile."
+      }
+   ]
+}
