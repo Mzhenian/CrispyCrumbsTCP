@@ -136,3 +136,37 @@ int JsonConverter::parseInt(const string& jsonInt, strIt& it) {
 
     return number;
 }
+
+string JsonConverter::serialize(const jsonValue& jsonVal) {
+    string serialized;
+    if (holds_alternative<jsonObject>(jsonVal.value)) {
+        serialized = serialize(get<jsonObject>(jsonVal.value));
+    } else if (holds_alternative<int>(jsonVal.value)) {
+        serialized = to_string(get<int>(jsonVal.value));
+    } else if (holds_alternative<string>(jsonVal.value)) {
+        serialized = "\"" + get<string>(jsonVal.value) + "\"";
+    } else if (holds_alternative<vector<string>>(jsonVal.value)) {
+        serialized = "[";
+        const vector<string>& arr = get<vector<string>>(jsonVal.value);
+        for (auto it = arr.begin(); it != arr.end(); it++) {
+            serialized += "\"" + *it + "\",";
+        }
+        if (serialized.back() == ',') {
+            serialized.pop_back();
+        }
+        serialized += "]";
+    }
+    return serialized;
+}
+
+string JsonConverter::serialize(const jsonObject& jsonObj) {
+    string serialized = "{";
+    for (auto it = jsonObj.begin(); it != jsonObj.end(); it++) {
+        serialized += "\"" + it->first + "\":" + serialize(it->second) + ",";
+    }
+    if (serialized.back() == ',') {
+        serialized.pop_back();
+    }
+    serialized += "}";
+    return serialized;
+}

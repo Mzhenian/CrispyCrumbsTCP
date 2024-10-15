@@ -29,7 +29,8 @@ struct jsonValue {
     jsonValue(int num) : value(num) {}
     jsonValue(const string& s) : value(s) {}
     jsonValue(jsonObject* obj) : value(*obj) { delete obj; }
-    jsonValue(vector<string>* arr) : value(*arr) { delete arr; }
+    jsonValue(vector<string>* arr) : value(*arr) {}
+    
 };
 const unique_ptr<jsonValue> parseJsonValue(const string& jsonStr, strIt& it);
 const unique_ptr<jsonObject> parseJsonObject(const string& jsonObjStr, strIt& it);
@@ -37,6 +38,9 @@ const unique_ptr<vector<string>> parseJsonStringArray(const string& jsonStrArrSt
 string parseString(const string& jsonStr, strIt& it);
 int parseInt(const string& jsonInt, strIt& it);
 pair<string, jsonValue> parseKeyValuePair(const string& jsonValueStr, strIt& it);
+
+string serialize(const jsonValue& jsonVal);
+string serialize(const jsonObject& jsonObj);
 }  // namespace JsonConverter
 
 #endif
