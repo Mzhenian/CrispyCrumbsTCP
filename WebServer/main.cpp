@@ -5,8 +5,18 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <cstring>
+#include <unordered_map>
+#include <unordered_set>
+#include <mutex>
+#include <sstream>
 
 using namespace std;
+
+// Data structures
+unordered_map<string, unordered_set<string>> userVideosMap;  // userID -> set of videoIDs
+unordered_map<string, unordered_set<string>> videoRecommendationsMap;  // videoID -> set of recommended videoIDs
+
+mutex dataMutex;  // Mutex for thread-safe access to data structures
 
 // Function to handle communication with a client
 void handle_client(int client_sock) {
@@ -19,24 +29,58 @@ void handle_client(int client_sock) {
         read_bytes = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
         if (read_bytes > 0) {
             buffer[read_bytes] = '\0';  // Null-terminate the received string
-            cout << "Received from client: " << buffer << endl;  // Log the received message
-
-            // Check the message content
             string received_message(buffer);
-            if (received_message.find("User") != string::npos && received_message.find("watched video") != string::npos) {
-                cout << "A logged-in user watched a video!" << endl;
-            } else if (received_message.find("Video") != string::npos && received_message.find("viewed") != string::npos) {
-                cout << "An anonymous user watched a video!" << endl;
-            } 
 
-            // Send acknowledgment back to the client
-            const char *ack_message = "Message received\n";
-            int sent_bytes = send(client_sock, ack_message, strlen(ack_message), 0);
-            if (sent_bytes < 0) {
-                perror("Error sending acknowledgment to client");
-                break;
+            cout << "Received from client: " << received_message << endl;
+
+            // Process the message
+            if (received_message.find("WATCH") == 0) {
+                // WATCH <userId> <videoId>
+                istringstream iss(received_message);
+                string command, userId, videoId;
+                iss >> command >> userId >> videoId;
+
+                if (userId != "ANONYMOUS") {
+                    // Update user-videos mapping
+                    lock_guard<mutex> lock(dataMutex);
+                    userVideosMap[userId].insert(videoId);
+
+                    // Update video-recommendations mapping
+                    for (const auto& otherVideoId : userVideosMap[userId]) {
+                        if (otherVideoId != videoId) {
+                            videoRecommendationsMap[videoId].insert(otherVideoId);
+                            videoRecommendationsMap[otherVideoId].insert(videoId);
+                        }
+                    }
+                }
             }
-            cout << "Acknowledgment sent to client." << endl;
+            else if (received_message.find("GET_RECOMMENDATIONS") == 0) {
+                // GET_RECOMMENDATIONS <videoId>
+                istringstream iss(received_message);
+                string command, videoId;
+                iss >> command >> videoId;
+
+                unordered_set<string> recommendations;
+                {
+                    lock_guard<mutex> lock(dataMutex);
+                    recommendations = videoRecommendationsMap[videoId];
+                }
+
+                // Build the response message
+                string response = "RECOMMENDATIONS";
+                for (const auto& vid : recommendations) {
+                    response += " " + vid;
+                }
+                response += "\n";
+
+                // Send the response
+                send(client_sock, response.c_str(), response.length(), 0);
+            }
+            else {
+                // Unknown command
+                string error_message = "ERROR Unknown command\n";
+                send(client_sock, error_message.c_str(), error_message.length(), 0);
+            }
 
         } else if (read_bytes == 0) {
             cout << "Connection closed by client." << endl;
