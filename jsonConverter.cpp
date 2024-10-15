@@ -39,7 +39,7 @@ const unique_ptr<jsonValue> JsonConverter::parseJsonValue(const string& jsonStr,
         unique_ptr<jsonObject> obj = parseJsonObject(jsonStr, it);
         return unique_ptr<jsonValue>(new jsonValue(obj.release()));
     } else if (*it == '[') {
-        unique_ptr<vector<jsonValue>> arr = parseJsonArray(jsonStr, it);
+        unique_ptr<vector<string>> arr = parseJsonStringArray(jsonStr, it);
         return unique_ptr<jsonValue>(new jsonValue(arr.release()));
     } else if (*it == '\"') {
         return unique_ptr<jsonValue>(new jsonValue(parseString(jsonStr, it)));
@@ -48,7 +48,7 @@ const unique_ptr<jsonValue> JsonConverter::parseJsonValue(const string& jsonStr,
     }
 }
 
-const unique_ptr<vector<jsonValue>> JsonConverter::parseJsonArray(const string& jsonArrStr, strIt& it) {
+const unique_ptr<vector<string>> JsonConverter::parseJsonStringArray(const string& jsonArrStr, strIt& it) {
     while (it != jsonArrStr.end() && (*it == ' ' || *it == '\n')) it++;  // Skip whitespace
     if (it == jsonArrStr.end()) {
         throw invalid_argument("Unexpected end of JSON string while parsing array");
@@ -58,18 +58,18 @@ const unique_ptr<vector<jsonValue>> JsonConverter::parseJsonArray(const string& 
     }
     it++;  // Move past '['
 
-    unique_ptr<vector<jsonValue>> jsonArray(new vector<jsonValue>());
+    unique_ptr<vector<string>> stringArray(new vector<string>());
 
     while (it != jsonArrStr.end() && *it != ']') {
         while (it != jsonArrStr.end() && (*it == ' ' || *it == '\n' || *it == ',')) it++;  // Skip comma
-        jsonArray->emplace_back(*JsonConverter::parseJsonValue(jsonArrStr, it));
+        stringArray->emplace_back(JsonConverter::parseString(jsonArrStr, it));
     }
     if (it == jsonArrStr.end()) {
         throw invalid_argument("JSON array is not properly closed");
     }
     it++;  // Move past ']'
 
-    return jsonArray;
+    return stringArray;
 }
 
 pair<string, jsonValue> JsonConverter::parseKeyValuePair(const string& s, strIt& it) {
