@@ -69,6 +69,13 @@ Get the full **Crispy Crumbs** experience by using the following repositories:
 - [CrispyCrumbsWeb (React Frontend)](https://github.com/Mzhenian/CrispyCrumbsWeb)
 - [CrispyCrumbsAndroid (Android App)](https://github.com/Mzhenian/CrispyCrumbsAndroid)
 
+```mermaid
+graph TD;
+    NodeJS_Server["NodeJS Server - Backend"] <--> React_Web["React Frontend"];
+    NodeJS_Server <--> Android_App["Android App - Frontend"];
+    NodeJS_Server <--> TCP_Server["TCP Recommendation Server - Backend"];
+```
+
 ## Recommendation Algorithm Overview
 
 The recommendation engine in the TCP server uses a combination of user behavior and video popularity to generate personalized recommendations. Here's an overview of how the algorithm works:
