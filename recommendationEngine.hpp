@@ -6,8 +6,13 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <mutex>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
+#include <thread>
+#include <future>
 
 using namespace std;
 
@@ -20,10 +25,10 @@ class RecommendationEngine {
     ~RecommendationEngine();
 
     // find
-    vector<string> getRecommendations(const vector<string>& userWatchHistory, const string& userId);
+    vector<string> getRecommendations(const vector<string>& userWatchHistory, const string& userId, const string& videoId);
 
     // union
-    void loadUser(vector<string>& userWatchHistory, const string& userId);
+    void loadUser(const vector<string>& userWatchHistory, const string& userId);
 
     // make
     void loadVideo(const string& videoId, int views);

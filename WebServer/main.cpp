@@ -20,13 +20,18 @@
 
 using namespace std;
 namespace JC = JsonConverter;
-RecommendationEngine rcmndEngine;
 
 int BUFFER_SIZE = 4096;
 const int SERVER_PORT = 5555;
 
+void send_error_message(int client_sock, const string& error_message) {
+    string response = "{\"error\": \"" + error_message + "\"}\n";
+    send(client_sock, response.c_str(), response.length(), 0);
+}
+
 // handle each client connection
 void* handle_client(int* client_sock_ptr) {
+    RecommendationEngine rcmndEngine;
     int client_sock = *client_sock_ptr;
     delete client_sock_ptr;  // Free the allocated memory
 
@@ -38,11 +43,10 @@ void* handle_client(int* client_sock_ptr) {
 
     // Read data from client until the connection is closed
     while ((newMessage = message.find('\n') == string::npos) && (read_bytes = recv(client_sock, buffer, BUFFER_SIZE - 1, 0)) > 0) {
-        if(newMessage) {
+        if (newMessage) {
             buffer[read_bytes] = '\0';  // Null-terminate the received string
             message += buffer;          // Accumulate the received data
         }
-
         message_end = message.find('\n');
         if (message_end == string::npos) {
             cout << "Received just a buffered part from client..." << endl;
@@ -60,14 +64,22 @@ void* handle_client(int* client_sock_ptr) {
             jsonObj = *JC::parseJsonObject(message, it);
         } catch (const invalid_argument& e) {
             perror("Error parsing JSON.");
+            send_error_message(client_sock, "Error parsing JSON.");
             message.erase(0, message_end + 1);
+            while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+                message.erase(0, 1);
+            }
             continue;
         }
         try {
             action = get<string>(jsonObj.at("action").value);
         } catch (const exception& e) {
             cerr << "Missing 'action' string value in JSON object" << endl;
+            send_error_message(client_sock, "Missing 'action' string value in JSON object.");
             message.erase(0, message_end + 1);
+            while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+                message.erase(0, 1);
+            }
             continue;
         }
 
@@ -80,7 +92,11 @@ void* handle_client(int* client_sock_ptr) {
                 views = get<int>(jsonObj.at("views").value);
             } catch (const exception& e) {
                 cerr << "action == viewed: Missing 'videoId' or 'views' value in JSON object" << endl;
+                send_error_message(client_sock, "Missing 'videoId' or 'views' value in JSON object.");
                 message.erase(0, message_end + 1);
+                while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+                    message.erase(0, 1);
+                }
                 continue;
             }
 
@@ -91,18 +107,25 @@ void* handle_client(int* client_sock_ptr) {
         } else if (action == "watching") {
             vector<string> userWatchHistory;
             string userId;
+            string videoId;
             int videoViews;
 
             try {
                 userWatchHistory = get<vector<string>>(jsonObj.at("watchHistory").value);
                 userId = get<string>(jsonObj.at("userId").value);
+                videoId = get<string>(jsonObj.at("videoId").value);
             } catch (const exception& e) {
                 cerr << "action == watching: Missing 'userId' or 'watchHistory' value in JSON object" << endl;
+                send_error_message(client_sock, "Missing 'userId' or 'watchHistory' value in JSON object.");
+
                 message.erase(0, message_end + 1);
+                while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+                    message.erase(0, 1);
+                }
                 continue;
             }
 
-            vector<string> recommendations = rcmndEngine.getRecommendations(userWatchHistory, userId);
+            vector<string> recommendations = rcmndEngine.getRecommendations(userWatchHistory, userId, videoId);
 
             JC::jsonObject recommendationsObj;
             recommendationsObj.insert(make_pair("recommendedVideosList", &recommendations));
@@ -115,10 +138,16 @@ void* handle_client(int* client_sock_ptr) {
         } else {
             cerr << "requested unknown action" << endl;
             message.erase(0, message_end + 1);
+            while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+                message.erase(0, 1);
+            }
             continue;
         }
 
         message.erase(0, message_end + 1);
+        while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+            message.erase(0, 1);
+        }
     }
 
     if (read_bytes == 0) {
@@ -134,7 +163,6 @@ void* handle_client(int* client_sock_ptr) {
 
 // open a socket to listen for incoming connections and route them to the handle_client function
 int main() {
-
     int sock = socket(AF_INET, SOCK_STREAM, 0);  // Create a socket. AF_INET means IPv4 and SOCK_STREAM is TCP
     if (sock < 0) {
         perror("Error creating socket");
