@@ -107,13 +107,10 @@ void* handle_client(int* client_sock_ptr) {
         } else if (action == "watching") {
             vector<string> userWatchHistory;
             string userId;
-            string videoId;
-            int videoViews;
 
             try {
                 userWatchHistory = get<vector<string>>(jsonObj.at("watchHistory").value);
                 userId = get<string>(jsonObj.at("userId").value);
-                videoId = get<string>(jsonObj.at("videoId").value);
             } catch (const exception& e) {
                 cerr << "action == watching: Missing 'userId' or 'watchHistory' value in JSON object" << endl;
                 send_error_message(client_sock, "Missing 'userId' or 'watchHistory' value in JSON object.");
@@ -125,7 +122,32 @@ void* handle_client(int* client_sock_ptr) {
                 continue;
             }
 
-            vector<string> recommendations = rcmndEngine.getRecommendations(userWatchHistory, userId, videoId);
+            rcmndEngine.loadUser(userWatchHistory, userId);
+
+            cout << "loading user watch history" << endl;
+        } else if (action == "get recommendations") {
+            vector<string> userWatchHistory;
+            string videoId;
+
+            try {
+                if (jsonObj.contains("watchHistory")) {
+                    userWatchHistory = get<vector<string>>(jsonObj.at("watchHistory").value);
+                } else {
+                    userWatchHistory = {};
+                }
+                videoId = get<string>(jsonObj.at("videoId").value);
+            } catch (const exception& e) {
+                cerr << "action == watching: Missing 'videoId' or 'watchHistory' value in JSON object" << endl;
+                send_error_message(client_sock, "Missing 'videoId' or 'watchHistory' value in JSON object.");
+
+                message.erase(0, message_end + 1);
+                while (!message.empty() && (message.starts_with('\n') || message.starts_with('\0'))) {
+                    message.erase(0, 1);
+                }
+                continue;
+            }
+
+            vector<string> recommendations = rcmndEngine.getRecommendations(userWatchHistory, videoId);
 
             JC::jsonObject recommendationsObj;
             recommendationsObj.insert(make_pair("recommendedVideosList", &recommendations));

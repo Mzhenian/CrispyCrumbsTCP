@@ -25,7 +25,7 @@ class RecommendationEngine {
     ~RecommendationEngine();
 
     // find
-    vector<string> getRecommendations(const vector<string>& userWatchHistory, const string& userId, const string& videoId);
+    vector<string> getRecommendations(const vector<string>& userWatchHistory, const string& videoId);
 
     // union
     void loadUser(const vector<string>& userWatchHistory, const string& userId);

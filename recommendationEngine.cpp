@@ -16,9 +16,8 @@ RecommendationEngine::RecommendationEngine() {
 RecommendationEngine::~RecommendationEngine() {
 }
 
-vector<string> RecommendationEngine::getRecommendations(const vector<string>& userWatchHistory, const string& UserId, const string& videoId) {
+vector<string> RecommendationEngine::getRecommendations(const vector<string>& userWatchHistory, const string& videoId) {
     cout << "A logged-in user watched a video" << endl;
-    loadUser(userWatchHistory, UserId);
     unordered_map<string, unordered_set<string>> mapCopy = videoRecommendationsMap;
     vector<string> recommendations;
 
