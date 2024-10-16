@@ -22,7 +22,7 @@ vector<string> RecommendationEngine::getRecommendations(const vector<string>& us
     vector<string> recommendations;
 
     for (auto i : mapCopy[videoId]) {
-        if (find(userWatchHistory.begin(), userWatchHistory.end(), i) == userWatchHistory.end()) {
+        if (find(userWatchHistory.begin(), userWatchHistory.end(), i) == userWatchHistory.end() && i != videoId) {
             recommendations.push_back(i);
         }
     }
