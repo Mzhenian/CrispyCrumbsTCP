@@ -12,7 +12,7 @@ Welcome to the **Crispy Crumbs** TCP Recommendation Server. This server is built
 
 ### Prerequisites
 
-The TCP server must be activated before running the Node.js server for Crispy Crumbs. Without it, the Node.js server will display random videos instead of personalized recommendations.
+This recommendations server must be activated before running the Node.js server for Crispy Crumbs. Without it, the Node.js server will display random videos instead of personalized recommendations.
 
 - **C++ Compiler**: A C++ compiler that supports C++20 or later (e.g., GCC, Clang, MSVC).
 - **Make** (optional): To build the server using a Makefile.
@@ -24,7 +24,7 @@ The TCP server must be activated before running the Node.js server for Crispy Cr
   git clone https://github.com/Mzhenian/CrispyCrumbsTCP.git
   ```
 
-### Building the Server
+### Building the Server using Make
 
 1. **Navigate to the Project Directory**:
    ```bash
@@ -32,34 +32,30 @@ The TCP server must be activated before running the Node.js server for Crispy Cr
    ```
 
 2. **Build the Server**:
-   - Use **Make test** to build the server and run the server:
+   - Use **Make test** to build the server and run it:
      ```bash
      make test
      ```
-     - Use **Make** to build the server (note: this command will only create the server.out file but won't run it):
-     ```bash
-     make 
-     ```
-   - The Makefile will create the server using the following command:
+   - Alternatively, without Make using the command:
      ```bash
      g++ -std=gnu++20 -pthread -g -fdiagnostics-color=always WebServer/main.cpp recommendationEngine.cpp jsonConverter.cpp -o server.out && ./server.out
      ```
 
 ### Running the Server
 
-After building, run the TCP server:
+After initial build, you can also run the server :
 
 ```bash
-./server.out
+<path to project>/CrispyCrumbsTCP/server.out
 ```
 
 Ensure that the server is running before starting the Node.js backend server to enable video recommendations.
 
 ### Important Notes
 
-- The TCP server listens for requests from the Node.js server and provides video recommendations based on user data.
-- Both the TCP server and the Node.js server must be on the same network or properly configured to communicate.
-- Keep the TCP server running to ensure recommendations are displayed correctly in the app.
+- The recommendations server listens for requests from the Node.js server and provides video recommendations based on user data.
+- Both the recommendations server and the Node.js server must be on the same local network or properly configured to communicate.
+- Keep the recommendations server running to ensure recommendations are displayed correctly in the app.
 
 ### Related Repositories
 
@@ -73,7 +69,7 @@ Get the full **Crispy Crumbs** experience by using the following repositories:
 graph TD;
     NodeJS_Server["NodeJS Server - Backend"] <--> React_Web["React Frontend"];
     NodeJS_Server <--> Android_App["Android App - Frontend"];
-    NodeJS_Server <--> TCP_Server["TCP Recommendation Server - Backend"];
+    NodeJS_Server <--> TCP_Server["TCP C++ Recommendation Server - Backend"];
 ```
 
 ## Recommendation Algorithm Overview
@@ -86,9 +82,9 @@ The recommendation engine handles each request from the Node.js server in real t
 
 ## Work Process
 
-Our team worked collaboratively to create the TCP recommendation server. The server is designed to handle requests from the Node.js backend and respond with relevant video recommendations in real time, enhancing the user experience on Crispy Crumbs.
+Our team worked collaboratively to create the recommendation server. The server is designed to handle requests from the Node.js backend and respond with relevant video recommendations in real time, enhancing the user experience on Crispy Crumbs.
 
 The journey was challenging but rewarding, as it allowed us to deepen our understanding of networking, recommendation algorithms, and cross-language integration.
 
 - **Jira Board**:  
-  [Jira Missions](https://crispycrumbs.atlassian.net/jira/software/projects/SCRUM/list?sortBy=customfield_10020&direction=ASC)
+  [Jira project](https://crispycrumbs.atlassian.net/jira/software/projects/SCRUM/list?sortBy=customfield_10020&direction=ASC)
