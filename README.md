@@ -14,7 +14,7 @@ Welcome to the **Crispy Crumbs** TCP Recommendation Server. This server is built
 
 This recommendations server must be activated before running the Node.js server for Crispy Crumbs. Without it, the Node.js server will display random videos instead of personalized recommendations.
 
-- **C++ Compiler**: A C++ compiler that supports C++20 or later (e.g., GCC, Clang, MSVC).
+- **C++ Compiler**: A C++ compiler that supports C++20 or later (e.g., GCC, Clang, MSVC). We suggest running it on WSL
 - **Make** (optional): To build the server using a Makefile.
 
 ### Download
